@@ -1,0 +1,14 @@
+# Core agent
+claude-agent-sdk
+
+# Backend (added at M2)
+fastapi
+uvicorn[standard]
+
+# Utilities
+python-frontmatter   # parse note frontmatter
+pydantic
+
+# Retrieval stage 2 (added at M3) — pin/choose at build time:
+# sqlite-vec
+# (embedding client TBD: hosted API or local model)

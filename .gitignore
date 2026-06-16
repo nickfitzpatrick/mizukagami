@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+
+# Node / Electron
+node_modules/
+dist/
+out/
+.vite/
+
+# Local data / secrets
+*.sqlite
+*.sqlite3
+index/*.db
+index/*.bin
+memory/agent_memory.json
+
+# OS
+.DS_Store
+
+# Keep folder structure but ignore generated contents
+!notes/.gitkeep
+!index/.gitkeep
+!memory/.gitkeep

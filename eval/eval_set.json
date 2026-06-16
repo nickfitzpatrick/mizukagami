@@ -1,0 +1,17 @@
+{
+  "_comment": "Retrieval eval set (spec §5). Each item: a question and the note id(s) that SHOULD be retrieved. Score search_notes against this at stage 1 (keyword) and stage 2 (embeddings); the delta is the headline result. Grow to ~15-25 items. The third item below deliberately uses no shared keywords with its target note to expose where keyword search fails and embeddings win.",
+  "items": [
+    {
+      "question": "How does RouteMorph justify its stop ordering?",
+      "expected_note_ids": ["2026-06-16-routemorph-explainability"]
+    },
+    {
+      "question": "What does the Geopogo accessibility checker look at?",
+      "expected_note_ids": ["2026-06-12-geopogo-ada"]
+    },
+    {
+      "question": "Why can't simple word-matching find related notes?",
+      "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]
+    }
+  ]
+}
