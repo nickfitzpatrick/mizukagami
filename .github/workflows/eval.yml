@@ -26,6 +26,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements-dev.txt
 
+      # Cache the embedding model so CI downloads it once, not every run.
+      # Avoids HuggingFace 429 rate-limits on repeated anonymous pulls.
+      - name: Cache HuggingFace model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2
+
+      # Pre-fetch the model with retries so a transient 429 on a cold cache
+      # doesn't fail the run. No-op once the cache is warm.
+      - name: Pre-download embedding model
+        run: |
+          for i in 1 2 3 4 5; do
+            python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" && break
+            echo "Download failed (attempt $i), retrying in $((i*15))s..."
+            sleep $((i*15))
+          done
+
       - name: Run unit tests
         run: |
           cd backend && python -m pytest -q
