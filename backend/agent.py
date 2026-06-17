@@ -1,28 +1,30 @@
-"""The agent harness: system prompt + scoped tools + the Agent SDK loop.
+"""The agent harness: LangGraph ReAct loop + scoped tools + system prompt.
 
-This is the heart of the project (spec §4). At M1 it is driven by cli.py;
-at M2 it is wrapped by FastAPI in app.py.
+Heart of the project (spec §4). Model-agnostic: the model comes from llm.py
+and can be Ollama or Claude. M1 drives this from cli.py; M2 wraps it in
+FastAPI (app.py).
 
-Reference shape (verify against installed claude-agent-sdk):
+Reference shape (verify against installed langgraph/langchain):
 
-    from claude_agent_sdk import query, ClaudeAgentOptions
-    from tools.note_tools import server  # in-process MCP with scoped tools
+    from langgraph.prebuilt import create_react_agent
+    from llm import get_chat_model
+    from tools.note_tools import TOOLS   # list of @tool functions
 
-    SYSTEM_PROMPT = '''You are PIA, a personal note assistant.
-    Always retrieve relevant notes (search_notes) before answering questions
-    about the user's notes. Cite which notes you used. Never invent note
-    content. Ask before overwriting a note. Be concise.'''
+    SYSTEM_PROMPT = '''You are Mizukagami, a personal note assistant.
+    Always use search_notes to retrieve relevant notes before answering
+    questions about the user's notes. Cite which notes you used by id.
+    Never invent note content. Ask before overwriting a note. Be concise.'''
 
-    async def run(prompt, agent_memory_facts):
-        options = ClaudeAgentOptions(
-            system_prompt=SYSTEM_PROMPT + format_memory(agent_memory_facts),
-            allowed_tools=[
-                "mcp__pia__search_notes", "mcp__pia__read_note",
-                "mcp__pia__write_note", "mcp__pia__update_note",
-                "mcp__pia__list_notes", "mcp__pia__remember",
-            ],  # note: NO built-in Bash/Write/Read — scoping is the point
-            mcp_servers={"pia": server},
-        )
-        async for message in query(prompt=prompt, options=options):
-            yield message
+    def build_agent(agent_memory_facts=None):
+        model = get_chat_model()
+        prompt = SYSTEM_PROMPT + format_memory(agent_memory_facts or [])
+        return create_react_agent(model, TOOLS, prompt=prompt)
+
+    # stream:
+    #   agent = build_agent()
+    #   for chunk in agent.stream({"messages": [("user", prompt)]}):
+    #       ...
+
+Stretch: replace create_react_agent with a hand-built StateGraph to show
+node/edge-level understanding of the loop.
 """

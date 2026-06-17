@@ -1,14 +1,21 @@
-# Core agent
-claude-agent-sdk
+# Agent framework
+langgraph
+langchain
+langchain-core
+
+# Models (model-agnostic core — both installed; pick at runtime via env)
+langchain-ollama       # local open-weight models via Ollama
+langchain-anthropic    # Claude API
 
 # Backend (added at M2)
 fastapi
 uvicorn[standard]
 
 # Utilities
-python-frontmatter   # parse note frontmatter
+python-frontmatter     # parse note frontmatter
 pydantic
+python-dotenv
 
 # Retrieval stage 2 (added at M3) — pin/choose at build time:
 # sqlite-vec
-# (embedding client TBD: hosted API or local model)
+# (embeddings can be Ollama-served via langchain-ollama, or a hosted model)

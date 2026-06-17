@@ -1,10 +1,12 @@
-# PIA — Personal Intelligent Application
+# Mizukagami — a local-first AI second brain
 
-A local-first "second brain" desktop agent. You write notes; it retrieves the *right* notes at the right time and reasons over them. Built on the Anthropic Claude Agent SDK to demonstrate agent-harness design, well-scoped tools, persistent memory, and retrieval (keyword → embeddings) — the systems concepts that matter for AI Engineering / AI Product roles.
+Mizukagami (水鏡, "water mirror") is a local-first "second brain" desktop agent. You write notes; it retrieves the *right* notes at the right time and reasons over them. Built on **LangGraph** with a model-agnostic core (local **Ollama** model and the **Claude API**, interchangeable) to demonstrate agent-harness design, well-scoped tools, persistent memory, and retrieval (keyword → embeddings) — the systems concepts that matter for AI Engineering / AI Product roles.
 
-**Status:** spec v0.1 (2026-06-16). Pre-build.
+> Portfolio tagline (lead with this; the name alone won't tell a recruiter what it is): **"Mizukagami — a local-first AI second brain that retrieves and reasons over your notes."**
+
+**Status:** spec v0.2 (2026-06-16). Pre-build. (v0.1 targeted the Claude Agent SDK; revised to LangGraph + Ollama for model-agnosticism, deeper harness learning, and lower dev cost — see §4.)
 **Owner:** Nick
-**Product name (working):** PIA. Alt names to consider later: "Recall", "Marginalia", "Cortex".
+**Repo folder:** `AI_Projects/PIA/` (product name Mizukagami).
 
 ---
 
@@ -19,7 +21,8 @@ Non-goals (explicitly out of scope for now): multi-user, cloud sync, mobile, acc
 
 ### The interview narrative (write the code to earn these sentences)
 
-- "I built the agent on the Claude Agent SDK and scoped its tools deliberately so the model operates inside a small, safe action space instead of free-form file access."
+- "I built the agent loop on LangGraph and scoped its tools deliberately so the model operates inside a small, safe action space instead of free-form file access."
+- "I made the model layer pluggable: the same graph runs against a local Ollama model or the Claude API, so I iterate for free locally and switch to a frontier model for quality. The open-weight piece is a real feature, not a footnote."
 - "I shipped keyword retrieval first, built an eval set, measured where it failed on semantically-related notes, then rebuilt retrieval with embeddings + vector search and measured the lift."
 - "I gave the agent persistent memory separate from conversation context, and made the human/agent boundary explicit: human-triggered now, background-capable by design."
 - "It's a desktop app (Electron shell + Python agent backend), so it embeds in my actual workflow rather than living in a browser tab."
@@ -28,7 +31,8 @@ Non-goals (explicitly out of scope for now): multi-user, cloud sync, mobile, acc
 
 ## 2. Concepts in plain language (so the spec is self-documenting)
 
-- **Agent harness.** The scaffolding around the model: the loop that lets it call tools and see results, the system prompt that defines its job and constraints, and the set of tools it's allowed to use. The Agent SDK provides the loop; *we* design the prompt and tools. Good harness design = tools scoped tightly enough that the model rarely does the wrong thing.
+- **Agent harness.** The scaffolding around the model: the loop that lets it call tools and see results, the system prompt that defines its job and constraints, and the set of tools it's allowed to use. With LangGraph we assemble the loop ourselves from a prebuilt ReAct agent (or a hand-built graph), which means we see and control the harness internals rather than having them hidden. Good harness design = tools scoped tightly enough that the model rarely does the wrong thing.
+- **Model-agnostic core.** The agent talks to a *model interface*, not a specific vendor. LangGraph lets us pass either a local `ChatOllama` model or a `ChatAnthropic` (Claude API) model into the same graph, interchangeably. We develop against local Ollama (free, private) and switch to Claude for quality. This is the "open-weight model" goal, realized as a runtime choice.
 - **Tool scoping.** Instead of handing the agent raw file access, we expose a small set of purpose-built tools (`search_notes`, `read_note`, `write_note`, `list_notes`). Narrow tools make agent behavior predictable, auditable, and safe. This is the single most-cited "good practice" signal in the project.
 - **Retrieval.** Given a user question, find the notes worth putting in front of the model.
   - *Keyword (stage 1):* match words. Simple, no infra, misses synonyms/paraphrase.
@@ -51,10 +55,10 @@ Non-goals (explicitly out of scope for now): multi-user, cloud sync, mobile, acc
 │  - /chat  (runs the agent loop, streams)       │
 │  - /notes (CRUD passthrough)                   │
 │  ┌──────────────────────────────────────────┐ │
-│  │  Agent harness (claude-agent-sdk)         │ │
-│  │   query() + ClaudeAgentOptions            │ │
-│  │   system prompt + allowed_tools           │ │
-│  │   custom tools via @tool / in-proc MCP    │ │
+│  │  Agent harness (LangGraph)                │ │
+│  │   create_react_agent(model, tools, prompt)│ │
+│  │   model = ChatOllama | ChatAnthropic      │ │
+│  │   tools = scoped @tool functions          │ │
 │  └──────────┬───────────────────────────────┘ │
 │             │ calls scoped tools                │
 │  ┌──────────▼───────────────────────────────┐ │
@@ -63,21 +67,27 @@ Non-goals (explicitly out of scope for now): multi-user, cloud sync, mobile, acc
 │  │  Agent memory  (durable facts JSON)       │ │
 │  └───────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────┘
+          │ model calls (one of:)
+          ▼
+   ┌─────────────┐     ┌──────────────────┐
+   │ Ollama      │     │ Claude API       │
+   │ (local, $0) │ or  │ (frontier qual.) │
+   └─────────────┘     └──────────────────┘
 ```
 
-**Why this split:** the hard AI work is pure Python (your preference, and where the SDK lives). Electron is the desktop shell (the "this is a product" signal, and the right home for background/tray behavior later). They talk over `localhost` only — nothing leaves the machine except the Claude API calls themselves.
+**Why this split:** the hard AI work is pure Python (your preference, and where LangGraph lives). Electron is the desktop shell (the "this is a product" signal, and the right home for background/tray behavior later). They talk over `localhost` only — nothing leaves the machine except, optionally, the Claude API calls.
 
-**Model layer is abstracted.** All model calls go through one module (`backend/llm.py`). v1 uses the Claude API via the Agent SDK. The friend's open-weight idea (Ollama/Mistral) becomes a *later, optional* swap behind this interface — a portfolio talking point, not a v1 dependency.
+**Model layer is pluggable, not just abstracted.** `backend/llm.py` returns a LangChain chat model — `ChatOllama` for local/free/private dev, or `ChatAnthropic` for frontier quality — selected by config/env. The *same graph* runs against either. The open-weight goal is therefore a first-class runtime choice from M1, not a deferred swap. Mistral, Llama, etc. are just different Ollama model tags.
 
 ---
 
 ## 4. The agent harness (the core)
 
 ### System prompt (sketch, refined during build)
-Defines PIA as a note-retrieval-and-reasoning assistant. Key instructions: always retrieve before answering factual questions about the user's notes; cite which notes it used; never fabricate note content; ask before overwriting an existing note; keep answers concise. Embeds the agent-memory facts at the top each run.
+Defines Mizukagami as a note-retrieval-and-reasoning assistant. Key instructions: always retrieve before answering factual questions about the user's notes; cite which notes it used; never fabricate note content; ask before overwriting an existing note; keep answers concise. Embeds the agent-memory facts at the top each run. In LangGraph this is passed as the `prompt` arg to `create_react_agent` (or the system message in a hand-built graph).
 
-### Scoped tools (custom, via `@tool` + `create_sdk_mcp_server`)
-Deliberately small. The agent gets *these and nothing else* (no raw `Bash`/`Write`):
+### Scoped tools (LangChain/LangGraph `@tool` decorator)
+Deliberately small. The agent gets *these and nothing else* (no shell, no raw file write):
 
 | Tool | Signature (conceptual) | Purpose |
 |------|------------------------|---------|
@@ -88,15 +98,15 @@ Deliberately small. The agent gets *these and nothing else* (no raw `Bash`/`Writ
 | `list_notes` | `(limit: int=20) -> list[meta]` | Browse recent notes (titles/dates), no bodies. |
 | `remember` | `(fact: str) -> ok` | Append a durable fact to agent memory. |
 
-Tools are exposed as an in-process MCP server; referenced in `allowed_tools` as `mcp__pia__search_notes`, etc. **No built-in file/shell tools are allowed** — that's the scoping point.
+Tools are plain Python functions wrapped in LangChain's `@tool` decorator and passed as the `tools` list to the agent. The agent has **no other tools** — no shell, no filesystem, no web. That closed action space *is* the scoping point, and it's enforced by simply not giving it anything else.
 
 ### Loop & streaming
-Backend calls `query(prompt=..., options=ClaudeAgentOptions(system_prompt=..., allowed_tools=[...], mcp_servers={"pia": server}))` and streams messages to the Electron UI. A `PreToolUse` hook logs every tool call to an audit log (good demo: "here's exactly what the agent did and why").
+M1 uses LangGraph's prebuilt `create_react_agent(model, tools, prompt)` for the ReAct loop (model is `ChatOllama` or `ChatAnthropic`). Stream via the graph's `.stream()` / `.astream()` to the CLI (M1) and later to the Electron UI over the FastAPI `/chat` endpoint (M2). Tool calls are logged to an audit log for the "here's exactly what the agent did and why" demo. *Stretch:* replace the prebuilt agent with a hand-built `StateGraph` to show you understand the loop at the node/edge level — a strong depth signal if time allows.
 
 ### Memory model (three tiers, kept distinct on purpose)
 1. **Notes** — the corpus. Markdown files on disk. The thing being retrieved.
 2. **Agent memory** — durable facts/preferences the agent chose to keep (`remember` tool), small JSON, injected into the system prompt each run.
-3. **Session** — short-term conversation context, handled by the SDK (`resume`/session id). Ephemeral by comparison.
+3. **Conversation state** — short-term context within a session, held in LangGraph state (and optionally persisted via a LangGraph checkpointer). Ephemeral by comparison.
 
 Articulating these three as separate tiers is itself an interview talking point.
 
@@ -143,16 +153,20 @@ tags: [routemorph, xai]
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Agent | `claude-agent-sdk` (Python) | Provides the loop, tool execution, hooks, sessions, in-process custom tools. Industry-current. |
+| Agent framework | LangGraph (`langgraph`, `langchain`) | Model-agnostic; you assemble the loop (learning); 2026 production standard; widest resume recognition. |
+| Models | `langchain-ollama` (ChatOllama) + `langchain-anthropic` (ChatAnthropic) | Same graph runs local (free/private) or Claude (frontier). Open-weight goal is native. |
+| Local inference | Ollama | Runs open-weight models (Llama/Mistral/etc.) locally at $0/call. See hardware caveat below. |
 | Backend | FastAPI + uvicorn | Async, streams cleanly to Electron, minimal. |
-| Model access | Claude API via SDK (abstracted in `llm.py`) | v1 simplest path; open-weight swap later behind the interface. |
 | Retrieval s1 | keyword (stdlib / SQLite) | Zero infra. |
-| Retrieval s2 | embeddings + local vector store (SQLite-vec or similar) | Local-first, no service dependency. |
+| Retrieval s2 | embeddings + local vector store (SQLite-vec or similar) | Local-first, no service dependency. Embeddings can also be Ollama-served. |
 | Desktop shell | Electron + React + Vite | Desktop product feel; tray/background path for later; full aesthetic control. |
 | Storage | markdown files + JSON + SQLite | Local-first, inspectable, git-friendly. |
+| Version control / CI | Git + GitHub + GitHub Actions | See §11. |
 | Packaging | electron-builder (later) | Distributable demo. |
 
-**Cost note (verify before building):** as of 2026-06-15, Agent SDK usage on Claude subscription plans draws from a separate monthly Agent SDK credit (Pro $20 / Max tiers higher). For development, a pay-as-you-go API key is the cleanest. Confirm current pricing at build time.
+**Cost:** LangGraph is free OSS. Ollama inference is $0/call (local). The Claude API is pay-as-you-go and only hit when you select the Claude model — so dev iteration can be entirely free. This is *cheaper* than a Claude-only path where every loop iteration is billed.
+
+**Hardware caveat (the one real constraint):** Ollama runs models on your machine. A small model (~3B–8B, e.g. Llama 3.x 8B) runs on a typical laptop; larger models want more RAM/GPU. If local inference is too slow on your hardware, point the same graph at the Claude API — you lose only the "free local" perk, nothing architectural. Verify your machine's RAM/GPU before committing to a local model size at M1.
 
 ---
 
@@ -160,10 +174,10 @@ tags: [routemorph, xai]
 
 **M0 — Spec + scaffold.** This doc + repo skeleton + git init. *(in progress)*
 
-**M1 — Agent works in the terminal (keyword).**
-- `notes/` with sample notes. `search_notes`/`read_note`/`write_note`/`list_notes` (keyword).
-- Agent harness in Python; talk to it via a CLI. No UI, no FastAPI yet.
-- Exit criteria: ask a question, agent retrieves a note and answers citing it; write a note via the agent.
+**M1 — Agent works in the terminal (keyword), model-agnostic from day one.**
+- `notes/` with sample notes. `search_notes`/`read_note`/`write_note`/`list_notes` (keyword), as LangChain `@tool` functions.
+- LangGraph `create_react_agent`; `llm.py` returns ChatOllama or ChatAnthropic by env. Talk to it via a CLI. No UI, no FastAPI yet.
+- Exit criteria: ask a question, agent retrieves a note and answers citing it; write a note via the agent; same run works against both a local Ollama model and Claude by flipping one env var.
 
 **M2 — Backend + eval set.**
 - Wrap the agent in FastAPI (`/chat` streaming, `/notes` CRUD). `remember` tool + agent memory.
@@ -180,14 +194,15 @@ tags: [routemorph, xai]
 - Exit criteria: end-to-end desktop app you actually use.
 
 **M5 — Polish + portfolio.**
-- Audit-log viewer (shows tool calls), README with architecture diagram + eval results, short demo GIF/video, writeup.
-- *Stretch:* background/scheduled mode (tray app that digests new notes); optional open-weight model swap behind `llm.py`.
+- Audit-log viewer (shows tool calls), README with architecture diagram + eval results, short demo GIF/video, writeup. Model-comparison note: how the local vs. Claude model differed in quality on the same tasks (good content).
+- *Stretch:* background/scheduled mode (tray app that digests new notes); hand-built `StateGraph` to replace the prebuilt ReAct agent.
 
 ---
 
 ## 9. Open decisions (resolve as we hit them)
 
-- Embedding model: hosted vs. local (decide at M3).
+- Local model + size at M1 (depends on your hardware — check RAM/GPU first).
+- Embedding model: Ollama-served vs. hosted (decide at M3).
 - Vector store: SQLite-vec vs. alternative (decide at M3, verify current options).
 - Chunking strategy for long notes (decide at M3).
 - Electron aesthetic direction (decide at M4 — bring references).
@@ -198,5 +213,26 @@ tags: [routemorph, xai]
 - **Scope creep via UI.** Mitigation: M1–M3 prove the AI before any pixels (backend-first).
 - **Electron/Python two-language overhead.** Mitigation: keep the boundary tiny (HTTP, a few endpoints); Python owns all logic.
 - **Eval set too small to be meaningful.** Mitigation: keep it honest about n; it's a learning instrument, not a benchmark claim.
-- **API cost during dev.** Mitigation: small model for tool-loop iterations; cache where possible.
+- **Local model quality.** Small Ollama models may handle tool-calling worse than Claude. Mitigation: model-agnostic core means you fall back to Claude for quality; the *difference* is itself portfolio content.
+
+---
+
+## 11. Version control & GitHub (portfolio surface)
+
+The repo *is* the portfolio artifact. Priorities, highest signal-per-effort first:
+
+1. **Polished public README (the thing recruiters actually see).** One-line description + tagline, architecture diagram, the **eval before/after numbers**, a short demo GIF, and a "what I learned" section. A reviewer spends ~30 seconds on the repo page; this is where it's won.
+2. **GitHub Actions CI running the eval harness + tests on push.** Most portfolio projects have no tests and no CI; a green "passing" check is a strong, cheap AI-engineering signal and makes the eval harness continuously enforced. Workflow at `.github/workflows/eval.yml`. (CI runs keyword-stage eval and unit tests; it does *not* call paid model APIs or Ollama — keep CI hermetic.)
+3. **Frequent, meaningful commits (one per milestone / sub-step).** Less about impressing anyone, more about rebuilding Git muscle memory and keeping a readable history. Convention: `M1: implement keyword search_notes tool`, `M3: swap retrieval to embeddings`, etc.
+
+**Conventions** (in `CONTRIBUTING.md`): imperative commit subjects prefixed with the milestone; never commit secrets (`.env` is gitignored); never commit generated indexes or `agent_memory.json`.
+
+**Pushing to GitHub (you do this — I can't auth to your account):**
+```bash
+# after creating an empty repo named "mizukagami" on github.com
+cd PIA
+git remote add origin git@github.com:<you>/mizukagami.git
+git branch -M main
+git push -u origin main
 ```
+Deferred: GitHub connector (lets future sessions read issues/PRs/commits). Not needed for the portfolio; add later if useful.
