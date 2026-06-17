@@ -22,6 +22,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install python-frontmatter pytest
+          # Note: full app deps are in backend/requirements.txt; CI only needs
+          # frontmatter (for notes_store) + pytest since it runs keyword-stage
+          # retrieval + unit tests, no model calls.
 
       - name: Run unit tests
         run: |

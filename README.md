@@ -46,8 +46,11 @@ Try: `what did I note about RouteMorph's explainability?` — the agent should
 call `search_notes`, then answer citing the note id.
 
 ### Tests & eval
+Requires Python 3.10+ (3.12 recommended). Tests need the dev deps:
 ```bash
-cd backend && python -m pytest -q          # unit tests
+cd backend
+pip install -r requirements-dev.txt        # app deps + pytest
+python -m pytest -q                         # unit tests
 cd ../eval && python run_eval.py           # keyword-stage retrieval metrics
 ```
 Current keyword-stage baseline (n=3): hit_rate@5 = 1.00, recall@5 = 1.00.
