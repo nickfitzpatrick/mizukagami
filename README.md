@@ -7,7 +7,9 @@ Built on **LangGraph** with a model-agnostic core: the same agent runs against a
 See [`spec.md`](./spec.md) for the full design, rationale, and milestones.
 
 ## Status
-M1 complete: working keyword agent you can talk to in the terminal, model-agnostic (Ollama or Claude). Tests + retrieval eval pass.
+M2 complete: keyword agent + FastAPI backend (streaming `/chat`, `/notes` CRUD), model-agnostic (Ollama or Claude), 18-item retrieval eval, 9 passing tests.
+
+Keyword-stage retrieval baseline (hit_rate@1, n=18): overall 0.89, direct 1.00, paraphrase 0.75. The paraphrase gap is what M3 embeddings will close.
 
 > Note: folder is `PIA/` (the original "Personal Intelligent Application" working title); product name is **Mizukagami**.
 
@@ -45,16 +47,34 @@ MIZUKAGAMI_MODEL_PROVIDER=anthropic python cli.py
 Try: `what did I note about RouteMorph's explainability?` — the agent should
 call `search_notes`, then answer citing the note id.
 
+### Backend API (M2)
+```bash
+cd backend && source .venv/bin/activate
+uvicorn app:app --reload --port 8000
+```
+Endpoints (localhost only):
+- `POST /chat` `{"message": "..."}` — streams Server-Sent Events: `tool_call`, `answer`, `done`.
+- `GET /notes?limit=20` — recent note metadata.
+- `GET /notes/{id}` — one note's body.
+- `POST /notes` `{"title","body"}` — create a note.
+
+Quick check:
+```bash
+curl -N -X POST localhost:8000/chat -H 'content-type: application/json' \
+  -d '{"message":"what did I note about RouteMorph explainability?"}'
+curl localhost:8000/notes
+```
+
 ### Tests & eval
 Requires Python 3.10+ (3.12 recommended). Tests need the dev deps:
 ```bash
 cd backend
 pip install -r requirements-dev.txt        # app deps + pytest
-python -m pytest -q                         # unit tests
-cd ../eval && python run_eval.py           # keyword-stage retrieval metrics
+python -m pytest -q                         # 9 tests (retrieval + API)
+cd ../eval && python run_eval.py           # keyword-stage retrieval metrics (hit_rate@1)
 ```
-Current keyword-stage baseline (n=3): hit_rate@5 = 1.00, recall@5 = 1.00.
-This number is the baseline the M3 embeddings work will be compared against.
+Current keyword-stage baseline (hit_rate@1, n=18): overall 0.89, direct 1.00,
+paraphrase 0.75 — the baseline M3 embeddings will be measured against.
 
 ## Design principles
 - Tools are tightly scoped (no shell, no raw filesystem, no web for the agent).

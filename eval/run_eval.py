@@ -23,38 +23,40 @@ import retrieval  # noqa: E402
 EVAL_SET = Path(__file__).resolve().parent / "eval_set.json"
 
 
-def score(k: int = 5) -> dict:
-    data = json.loads(EVAL_SET.read_text(encoding="utf-8"))
-    items = data["items"]
+def _score_items(items: list[dict], k: int) -> dict:
     hits = 0
-    recall_sum = 0.0
     for item in items:
         expected = set(item["expected_note_ids"])
         got = {h["note_id"] for h in retrieval.search(item["question"], k)}
-        found = expected & got
-        if found:
+        if expected & got:
             hits += 1
-        recall_sum += len(found) / len(expected) if expected else 0.0
     n = len(items)
+    return {"n": n, "hit_rate": hits / n if n else 0.0}
+
+
+def score(k: int = 5) -> dict:
+    items = json.loads(EVAL_SET.read_text(encoding="utf-8"))["items"]
+    direct = [i for i in items if i.get("kind") == "direct"]
+    paraphrase = [i for i in items if i.get("kind") == "paraphrase"]
     return {
-        "n": n,
         "k": k,
-        "hit_rate": hits / n if n else 0.0,
-        "recall": recall_sum / n if n else 0.0,
+        "overall": _score_items(items, k),
+        "direct": _score_items(direct, k),
+        "paraphrase": _score_items(paraphrase, k),
     }
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--k", type=int, default=1)
     args = ap.parse_args()
     r = score(args.k)
-    print(
-        f"[keyword stage] n={r['n']} k={r['k']} "
-        f"hit_rate@{r['k']}={r['hit_rate']:.2f} recall@{r['k']}={r['recall']:.2f}"
-    )
-    # Non-zero exit if retrieval is totally broken, so CI catches regressions.
-    return 0 if r["hit_rate"] > 0 else 1
+    k = r["k"]
+    for label in ("overall", "direct", "paraphrase"):
+        s = r[label]
+        print(f"[keyword stage] {label:10s} n={s['n']:2d}  hit_rate@{k}={s['hit_rate']:.2f}")
+    # Non-zero exit only if retrieval is totally broken, so CI catches regressions.
+    return 0 if r["overall"]["hit_rate"] > 0 else 1
 
 
 if __name__ == "__main__":

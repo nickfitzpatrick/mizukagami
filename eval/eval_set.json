@@ -1,17 +1,24 @@
 {
-  "_comment": "Retrieval eval set (spec §5). Each item: a question and the note id(s) that SHOULD be retrieved. Score search_notes against this at stage 1 (keyword) and stage 2 (embeddings); the delta is the headline result. Grow to ~15-25 items. The third item below deliberately uses no shared keywords with its target note to expose where keyword search fails and embeddings win.",
+  "_comment": "Retrieval eval set (spec §5). Each item: question, the note id(s) that SHOULD be retrieved, and a 'kind': 'direct' (shares keywords with the target) or 'paraphrase' (worded to avoid the target's vocabulary). Paraphrase items are expected to be HARD for keyword search and easier for M3 embeddings — that gap is the headline result. Run run_eval.py at stage 1 (keyword) and stage 2 (embeddings) and compare, overall and by kind.",
   "items": [
-    {
-      "question": "How does RouteMorph justify its stop ordering?",
-      "expected_note_ids": ["2026-06-16-routemorph-explainability"]
-    },
-    {
-      "question": "What does the Geopogo accessibility checker look at?",
-      "expected_note_ids": ["2026-06-12-geopogo-ada"]
-    },
-    {
-      "question": "Why can't simple word-matching find related notes?",
-      "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]
-    }
+    {"kind": "direct", "question": "How does RouteMorph justify its stop ordering?", "expected_note_ids": ["2026-06-16-routemorph-explainability"]},
+    {"kind": "direct", "question": "What does the Geopogo accessibility checker look at?", "expected_note_ids": ["2026-06-12-geopogo-ada"]},
+    {"kind": "direct", "question": "Why can't simple word-matching find related notes?", "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]},
+    {"kind": "direct", "question": "What solver did I pick for RouteMorph and why?", "expected_note_ids": ["2026-05-28-routemorph-solver-choice"]},
+    {"kind": "direct", "question": "How does the RouteMorph conversational interface work?", "expected_note_ids": ["2026-05-20-routemorph-conversational-interface"]},
+    {"kind": "direct", "question": "What is the Geopogo generative design platform?", "expected_note_ids": ["2026-06-02-geopogo-generative-design"]},
+    {"kind": "direct", "question": "What is my energy policy paper thesis about time-of-use pricing?", "expected_note_ids": ["2026-05-10-energy-policy-paper"]},
+    {"kind": "direct", "question": "What did the systems analytics hospital project find about the bottleneck?", "expected_note_ids": ["2026-05-15-systems-analytics-project"]},
+    {"kind": "direct", "question": "How do I prep high-protein tofu?", "expected_note_ids": ["2026-04-22-tofu-protein-prep"]},
+    {"kind": "direct", "question": "What roles am I targeting in my job search?", "expected_note_ids": ["2026-06-08-job-search-targeting"]},
+
+    {"kind": "paraphrase", "question": "How do I stop the moss enclosure from staying soggy at the roots?", "expected_note_ids": ["2026-04-15-vivarium-drainage-layer"]},
+    {"kind": "paraphrase", "question": "What raises agreement between people grading training examples?", "expected_note_ids": ["2026-06-11-rlhf-contract-notes"]},
+    {"kind": "paraphrase", "question": "Where should I add staff to cut the worst emergency-room delays?", "expected_note_ids": ["2026-05-15-systems-analytics-project"]},
+    {"kind": "paraphrase", "question": "Cheapest way to hit my daily gram goals on meatless days?", "expected_note_ids": ["2026-04-22-tofu-protein-prep"]},
+    {"kind": "paraphrase", "question": "Why skip a guaranteed-optimal method for the last-mile delivery scheduling?", "expected_note_ids": ["2026-05-28-routemorph-solver-choice"]},
+    {"kind": "paraphrase", "question": "How does the building-design app suggest massing from a parcel and program?", "expected_note_ids": ["2026-06-02-geopogo-generative-design"]},
+    {"kind": "paraphrase", "question": "What handles ingesting and normalizing messy CAD exports for the models?", "expected_note_ids": ["2026-06-05-geopogo-data-pipeline"]},
+    {"kind": "paraphrase", "question": "Why does meaning-aware lookup beat literal token overlap for my notes?", "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]}
   ]
 }

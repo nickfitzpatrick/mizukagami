@@ -2,3 +2,4 @@
 # Install: pip install -r requirements-dev.txt
 -r requirements.txt
 pytest
+httpx        # FastAPI TestClient transport for API tests
