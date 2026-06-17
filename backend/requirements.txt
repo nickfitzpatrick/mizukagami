@@ -16,6 +16,7 @@ python-frontmatter     # parse note frontmatter
 pydantic
 python-dotenv
 
-# Retrieval stage 2 (added at M3) — pin/choose at build time:
-# sqlite-vec
-# (embeddings can be Ollama-served via langchain-ollama, or a hosted model)
+# Retrieval stage 2 (M3): local embeddings + NumPy cosine. No external service,
+# so the eval harness stays hermetic for CI (spec §11).
+sentence-transformers   # all-MiniLM-L6-v2, runs in-process, $0/call
+numpy

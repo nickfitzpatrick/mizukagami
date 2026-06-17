@@ -17,6 +17,7 @@ out/
 *.sqlite3
 index/*.db
 index/*.bin
+index/*.npz
 memory/agent_memory.json
 
 # OS

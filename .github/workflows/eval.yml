@@ -1,9 +1,10 @@
 name: eval
 
-# Runs unit tests and the keyword-stage retrieval eval on every push/PR.
-# Installs the same deps you run locally (requirements-dev.txt) so CI tests
-# exactly what ships. No model API calls / no Ollama happen — the chat test
-# injects a fake model — so it stays effectively hermetic.
+# Runs unit tests and the retrieval eval (keyword + embeddings) on every
+# push/PR. Installs the same deps you run locally (requirements-dev.txt) so CI
+# tests exactly what ships. Stays hermetic: no chat-model API calls / no Ollama
+# (the chat test injects a fake model); the embedding model runs locally
+# in-process via sentence-transformers (downloaded once from HuggingFace).
 
 on:
   push:
@@ -29,6 +30,6 @@ jobs:
         run: |
           cd backend && python -m pytest -q
 
-      - name: Run keyword-stage retrieval eval
+      - name: Run retrieval eval (keyword + embeddings)
         run: |
-          cd eval && python run_eval.py
+          cd eval && python run_eval.py --k 1
