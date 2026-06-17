@@ -13,13 +13,11 @@ M3 complete: retrieval upgraded from keyword to **embeddings** (MiniLM + NumPy c
 
 | split | keyword | embeddings | delta |
 |-------|:-------:|:----------:|:-----:|
-| overall (n=25)    | 0.52 | _TBD_ | _TBD_ |
-| direct (n=12)     | 1.00 | _TBD_ | _TBD_ |
-| paraphrase (n=13) | 0.08 | _TBD_ | _TBD_ |
+| overall (n=25)    | 0.52 | 0.84 | **+0.32** |
+| direct (n=12)     | 1.00 | 1.00 | +0.00 |
+| paraphrase (n=13) | 0.08 | 0.69 | **+0.62** |
 
-The headline is the **paraphrase split**: 13 questions reworded to share at most one token with their target note (enforced by [`eval/check_overlap.py`](./eval/check_overlap.py), so the test can't drift easy). Keyword search has nothing to match on there and scores 0.08; embeddings match on meaning. Full writeup and method: [`docs/retrieval-eval.md`](./docs/retrieval-eval.md). (Honest caveat: n=13 is a learning instrument, not a benchmark — the *method* is the point.)
-
-> Embeddings column is `TBD` pending a local re-run (`python eval/run_eval.py --k 1`) — the dev sandbox has no torch. Paste the output into the table and `docs/retrieval-eval.md`.
+The headline is the **paraphrase split**: 13 questions reworded to share at most one token with their target note (enforced by [`eval/check_overlap.py`](./eval/check_overlap.py), so the test can't drift easy). Keyword search has nothing to match on there and scores 0.08; embeddings reach 0.69 by matching on meaning. Embeddings doesn't ace it — it misses 4 of 13, which is the point: the eval has teeth. Full writeup and method: [`docs/retrieval-eval.md`](./docs/retrieval-eval.md). (Honest caveat: n=13 is a learning instrument, not a benchmark — the *method* is the point.)
 
 > Note: folder is `PIA/` (the original "Personal Intelligent Application" working title); product name is **Mizukagami**.
 
