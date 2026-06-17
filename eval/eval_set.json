@@ -1,5 +1,5 @@
 {
-  "_comment": "Retrieval eval set (spec §5). Each item: question, the note id(s) that SHOULD be retrieved, and a 'kind': 'direct' (shares keywords with the target) or 'paraphrase' (worded to avoid the target's vocabulary). Paraphrase items are expected to be HARD for keyword search and easier for M3 embeddings — that gap is the headline result. Run run_eval.py at stage 1 (keyword) and stage 2 (embeddings) and compare, overall and by kind.",
+  "_comment": "Retrieval eval set (spec §5). Each item: question, the note id(s) that SHOULD be retrieved, and a 'kind': 'direct' (shares keywords with the target) or 'paraphrase' (reworded to share at most incidental function words with the target — verified low-overlap, see eval/check_overlap.py). Paraphrase items are built to be HARD for keyword search and the real test for embeddings. Several targets have sibling notes on the same project (4 RouteMorph, 3 Geopogo), so a retriever must distinguish among them, not just find the right topic. Run run_eval.py at both stages and compare overall and by kind.",
   "items": [
     {"kind": "direct", "question": "How does RouteMorph justify its stop ordering?", "expected_note_ids": ["2026-06-16-routemorph-explainability"]},
     {"kind": "direct", "question": "What does the Geopogo accessibility checker look at?", "expected_note_ids": ["2026-06-12-geopogo-ada"]},
@@ -11,14 +11,21 @@
     {"kind": "direct", "question": "What did the systems analytics hospital project find about the bottleneck?", "expected_note_ids": ["2026-05-15-systems-analytics-project"]},
     {"kind": "direct", "question": "How do I prep high-protein tofu?", "expected_note_ids": ["2026-04-22-tofu-protein-prep"]},
     {"kind": "direct", "question": "What roles am I targeting in my job search?", "expected_note_ids": ["2026-06-08-job-search-targeting"]},
+    {"kind": "direct", "question": "What is the Geopogo data pipeline doing?", "expected_note_ids": ["2026-06-05-geopogo-data-pipeline"]},
+    {"kind": "direct", "question": "What did I learn from the RLHF contract work?", "expected_note_ids": ["2026-06-11-rlhf-contract-notes"]},
 
-    {"kind": "paraphrase", "question": "How do I stop the moss enclosure from staying soggy at the roots?", "expected_note_ids": ["2026-04-15-vivarium-drainage-layer"]},
-    {"kind": "paraphrase", "question": "What raises agreement between people grading training examples?", "expected_note_ids": ["2026-06-11-rlhf-contract-notes"]},
-    {"kind": "paraphrase", "question": "Where should I add staff to cut the worst emergency-room delays?", "expected_note_ids": ["2026-05-15-systems-analytics-project"]},
-    {"kind": "paraphrase", "question": "Cheapest way to hit my daily gram goals on meatless days?", "expected_note_ids": ["2026-04-22-tofu-protein-prep"]},
-    {"kind": "paraphrase", "question": "Why skip a guaranteed-optimal method for the last-mile delivery scheduling?", "expected_note_ids": ["2026-05-28-routemorph-solver-choice"]},
-    {"kind": "paraphrase", "question": "How does the building-design app suggest massing from a parcel and program?", "expected_note_ids": ["2026-06-02-geopogo-generative-design"]},
-    {"kind": "paraphrase", "question": "What handles ingesting and normalizing messy CAD exports for the models?", "expected_note_ids": ["2026-06-05-geopogo-data-pipeline"]},
-    {"kind": "paraphrase", "question": "Why does meaning-aware lookup beat literal token overlap for my notes?", "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]}
+    {"kind": "paraphrase", "question": "How do I stop the terrarium soil staying boggy near its base?", "expected_note_ids": ["2026-04-15-vivarium-drainage-layer"]},
+    {"kind": "paraphrase", "question": "What makes graders agree when scoring AI responses?", "expected_note_ids": ["2026-06-11-rlhf-contract-notes"]},
+    {"kind": "paraphrase", "question": "Where should I put extra staff to shorten the worst emergency-room waits?", "expected_note_ids": ["2026-05-15-systems-analytics-project"]},
+    {"kind": "paraphrase", "question": "Affordable way to hit my gram goals on meatless evenings?", "expected_note_ids": ["2026-04-22-tofu-protein-prep"]},
+    {"kind": "paraphrase", "question": "Why skip a guaranteed-best method for the parcel-dropoff scheduling?", "expected_note_ids": ["2026-05-28-routemorph-solver-choice"]},
+    {"kind": "paraphrase", "question": "How does the building app suggest several initial form candidates given a parcel and brief?", "expected_note_ids": ["2026-06-02-geopogo-generative-design"]},
+    {"kind": "paraphrase", "question": "What cleans up inconsistent blueprint exports before they reach the generators?", "expected_note_ids": ["2026-06-05-geopogo-data-pipeline"]},
+    {"kind": "paraphrase", "question": "Why does semantic lookup outperform exact token matching for my notes?", "expected_note_ids": ["2026-06-10-embeddings-vs-keyword"]},
+    {"kind": "paraphrase", "question": "Can the driver-coordinator just ask the system in everyday words why a path looks as it does?", "expected_note_ids": ["2026-05-20-routemorph-conversational-interface"]},
+    {"kind": "paraphrase", "question": "How will the router make its choices understandable rather than opaque?", "expected_note_ids": ["2026-06-16-routemorph-explainability"]},
+    {"kind": "paraphrase", "question": "What spots wheelchair-access problems in submitted blueprints?", "expected_note_ids": ["2026-06-12-geopogo-ada"]},
+    {"kind": "paraphrase", "question": "Does charging more at peak hours by itself actually change when homes consume power?", "expected_note_ids": ["2026-05-10-energy-policy-paper"]},
+    {"kind": "paraphrase", "question": "Which positions and sectors am I aiming applications at?", "expected_note_ids": ["2026-06-08-job-search-targeting"]}
   ]
 }

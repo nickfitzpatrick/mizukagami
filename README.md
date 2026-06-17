@@ -7,14 +7,46 @@ Built on **LangGraph** with a model-agnostic core: the same agent runs against a
 See [`spec.md`](./spec.md) for the full design, rationale, and milestones.
 
 ## Status
-M2 complete: keyword agent + FastAPI backend (streaming `/chat`, `/notes` CRUD), model-agnostic (Ollama or Claude), 18-item retrieval eval, 9 passing tests.
+M3 complete: retrieval upgraded from keyword to **embeddings** (MiniLM + NumPy cosine) behind an unchanged `search(query, k)` seam, measured against the keyword baseline. Plus (from M1–M2) the LangGraph agent, scoped tools, FastAPI backend (streaming `/chat`, `/notes` CRUD), model-agnostic core (Ollama or Claude), and a 25-item retrieval eval. 12 passing tests.
 
-Keyword-stage retrieval baseline (hit_rate@1, n=18): overall 0.89, direct 1.00, paraphrase 0.75. The paraphrase gap is what M3 embeddings will close.
+### Retrieval eval: keyword → embeddings (hit_rate@1, n=25)
+
+| split | keyword | embeddings | delta |
+|-------|:-------:|:----------:|:-----:|
+| overall (n=25)    | 0.52 | _TBD_ | _TBD_ |
+| direct (n=12)     | 1.00 | _TBD_ | _TBD_ |
+| paraphrase (n=13) | 0.08 | _TBD_ | _TBD_ |
+
+The headline is the **paraphrase split**: 13 questions reworded to share at most one token with their target note (enforced by [`eval/check_overlap.py`](./eval/check_overlap.py), so the test can't drift easy). Keyword search has nothing to match on there and scores 0.08; embeddings match on meaning. Full writeup and method: [`docs/retrieval-eval.md`](./docs/retrieval-eval.md). (Honest caveat: n=13 is a learning instrument, not a benchmark — the *method* is the point.)
+
+> Embeddings column is `TBD` pending a local re-run (`python eval/run_eval.py --k 1`) — the dev sandbox has no torch. Paste the output into the table and `docs/retrieval-eval.md`.
 
 > Note: folder is `PIA/` (the original "Personal Intelligent Application" working title); product name is **Mizukagami**.
 
 ## Why this project
 Demonstrates the systems concepts behind applied AI engineering: deliberate **agent-harness** design, **tightly scoped tools**, **persistent memory**, a **model-agnostic** core (open-weight + frontier), and **retrieval** built and *measured* in two stages (keyword → embeddings) with an eval harness.
+
+## Architecture
+```
+  Electron desktop shell  (M4 — TypeScript/React)
+        │  localhost HTTP / SSE
+  ┌─────▼─────────────────────────────────────────┐
+  │  FastAPI backend  (Python — the AI engineering)│
+  │   /chat  (runs agent loop, streams)            │
+  │   /notes (CRUD)                                │
+  │  ┌──────────────────────────────────────────┐  │
+  │  │ LangGraph agent  (create_agent loop)      │  │
+  │  │   model = ChatOllama | ChatAnthropic ─────┼──┼──▶ Ollama (local, $0)
+  │  │   tools = scoped @tool fns (no shell/fs)  │  │   or Claude API
+  │  └────────────────┬─────────────────────────┘  │
+  │   ┌───────────────▼──────────────────────────┐ │
+  │   │ Notes (markdown, source of truth)         │ │
+  │   │ Retrieval: keyword → embeddings (MiniLM)  │ │
+  │   │ Agent memory (durable facts JSON)         │ │
+  │   └───────────────────────────────────────────┘ │
+  └─────────────────────────────────────────────────┘
+```
+Model layer is pluggable, not just abstracted: the *same graph* runs local or frontier, picked by one env var. Retrieval swapped implementations (keyword → embeddings) behind a fixed signature, so the eval compares both with identical calls.
 
 ## Layout
 ```
@@ -22,11 +54,11 @@ backend/    Python: LangGraph agent + retrieval + FastAPI (the AI engineering)
   tools/    Scoped @tool functions the agent is allowed to call
 electron/   Desktop shell (TypeScript/React) — added at M4
 notes/      The note corpus (markdown, source of truth)
-index/      Retrieval index / vector store (rebuildable from notes/)
+index/      Embedding cache (embeddings.npz, gitignored, rebuilt from notes/)
 memory/     Durable agent memory (facts/preferences)
 eval/       Retrieval evaluation set + scoring (the senior-track signal)
 docs/       Writeups, architecture diagram, eval before/after
-.github/    CI: runs tests + keyword-stage eval on push
+.github/    CI: runs tests + retrieval eval (both stages) on push
 ```
 
 ## Quickstart (M1)
@@ -66,15 +98,15 @@ curl localhost:8000/notes
 ```
 
 ### Tests & eval
-Requires Python 3.10+ (3.12 recommended). Tests need the dev deps:
+Requires Python 3.10+ (tested through 3.14). The eval's embedding stage pulls
+`sentence-transformers` + `torch` and downloads MiniLM (~90MB) on first run.
 ```bash
 cd backend
-pip install -r requirements-dev.txt        # app deps + pytest
-python -m pytest -q                         # 9 tests (retrieval + API)
-cd ../eval && python run_eval.py           # keyword-stage retrieval metrics (hit_rate@1)
+pip install -r requirements-dev.txt        # app deps + pytest + embeddings
+python -m pytest -q                         # 12 tests (keyword + embeddings + API)
+cd ../eval && python run_eval.py --k 1     # prints keyword vs embeddings + delta
 ```
-Current keyword-stage baseline (hit_rate@1, n=18): overall 0.89, direct 1.00,
-paraphrase 0.75 — the baseline M3 embeddings will be measured against.
+See the before/after table above, or [`docs/retrieval-eval.md`](./docs/retrieval-eval.md) for the full method and caveats.
 
 ## Design principles
 - Tools are tightly scoped (no shell, no raw filesystem, no web for the agent).
@@ -83,4 +115,4 @@ paraphrase 0.75 — the baseline M3 embeddings will be measured against.
 - Backend-first: the AI works and is *evaluated* before any UI is built.
 
 ## Version control
-Git + GitHub, CI via GitHub Actions ([`.github/workflows/eval.yml`](./.github/workflows/eval.yml)). See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for commit conventions. README will carry the architecture diagram, eval before/after numbers, and a demo GIF at M5 — that's the portfolio surface.
+Git + GitHub, CI via GitHub Actions ([`.github/workflows/eval.yml`](./.github/workflows/eval.yml)). See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for commit conventions. Architecture diagram and eval before/after numbers are above; a demo GIF lands at M5 once the Electron UI exists.
