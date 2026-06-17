@@ -7,7 +7,7 @@ Built on **LangGraph** with a model-agnostic core: the same agent runs against a
 See [`spec.md`](./spec.md) for the full design, rationale, and milestones.
 
 ## Status
-Pre-build. M0 (spec + scaffold) complete.
+M1 complete: working keyword agent you can talk to in the terminal, model-agnostic (Ollama or Claude). Tests + retrieval eval pass.
 
 > Note: folder is `PIA/` (the original "Personal Intelligent Application" working title); product name is **Mizukagami**.
 
@@ -27,19 +27,31 @@ docs/       Writeups, architecture diagram, eval before/after
 .github/    CI: runs tests + keyword-stage eval on push
 ```
 
-## Quickstart (M1, once implemented)
+## Quickstart (M1)
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp ../.env.example ../.env        # then edit
 
-# local & free (needs Ollama running + model pulled):
-ollama pull llama3.1:8b
-python cli.py
+# Option A — local & free (needs Ollama running + a model pulled):
+ollama pull llama3.1:8b          # ~5GB; wants ~8GB+ free RAM
+MIZUKAGAMI_MODEL_PROVIDER=ollama python cli.py
 
-# or frontier quality: set MIZUKAGAMI_MODEL_PROVIDER=anthropic + ANTHROPIC_API_KEY
+# Option B — frontier quality (Claude API):
+#   put ANTHROPIC_API_KEY in .env, then:
+MIZUKAGAMI_MODEL_PROVIDER=anthropic python cli.py
 ```
+Try: `what did I note about RouteMorph's explainability?` — the agent should
+call `search_notes`, then answer citing the note id.
+
+### Tests & eval
+```bash
+cd backend && python -m pytest -q          # unit tests
+cd ../eval && python run_eval.py           # keyword-stage retrieval metrics
+```
+Current keyword-stage baseline (n=3): hit_rate@5 = 1.00, recall@5 = 1.00.
+This number is the baseline the M3 embeddings work will be compared against.
 
 ## Design principles
 - Tools are tightly scoped (no shell, no raw filesystem, no web for the agent).
