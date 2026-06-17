@@ -11,10 +11,17 @@ Pick the model via env (see ../.env.example):
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-import llm
-from agent import build_agent
+# Load .env from the project root (one level up from backend/) so
+# ANTHROPIC_API_KEY and MIZUKAGAMI_* vars are picked up automatically.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+import llm  # noqa: E402
+from agent import build_agent  # noqa: E402
 
 
 def _print_stream(agent, user_text: str) -> None:
