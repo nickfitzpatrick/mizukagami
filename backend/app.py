@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import StreamingResponse  # noqa: E402
 from langchain_core.messages import AIMessage, HumanMessage  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
@@ -27,6 +28,14 @@ from agent import build_agent  # noqa: E402
 
 app = FastAPI(title="Mizukagami backend")
 
+# Allow Electron renderer (dev: localhost:5173, prod: file://)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:8000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -34,6 +43,10 @@ class ChatRequest(BaseModel):
 
 class NoteRequest(BaseModel):
     title: str
+    body: str
+
+
+class NoteUpdateRequest(BaseModel):
     body: str
 
 
@@ -73,7 +86,7 @@ def get_notes(limit: int = 20):
 @app.get("/notes/{note_id}")
 def get_note(note_id: str):
     try:
-        return {"id": note_id, "body": notes_store.read_note(note_id)}
+        return notes_store.read_note_detail(note_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"No note with id {note_id!r}")
 
@@ -81,4 +94,12 @@ def get_note(note_id: str):
 @app.post("/notes")
 def create_note(req: NoteRequest):
     note_id = notes_store.write_note(req.title, req.body)
+    return {"id": note_id}
+
+
+@app.put("/notes/{note_id}")
+def update_note(note_id: str, req: NoteUpdateRequest):
+    ok = notes_store.update_note(note_id, req.body)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"No note with id {note_id!r}")
     return {"id": note_id}

@@ -1,0 +1,63 @@
+/* Mizukagami -- dark glass theme */
+
+:root {
+  --bg:          #0d1117;
+  --bg-glass:    rgba(13, 17, 23, 0.75);
+  --surface:     rgba(255, 255, 255, 0.04);
+  --surface-hi:  rgba(255, 255, 255, 0.07);
+  --border:      rgba(100, 210, 255, 0.10);
+  --border-hi:   rgba(100, 210, 255, 0.22);
+  --accent:      #64d2ff;
+  --accent-dim:  rgba(100, 210, 255, 0.15);
+  --text:        #cdd9e5;
+  --text-muted:  #5c6e7e;
+  --text-faint:  #3d4f5c;
+  --danger:      #f97583;
+  --success:     #56d364;
+  --font-ui:     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:   "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --radius:      8px;
+  --radius-sm:   4px;
+  --blur:        12px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
+
+button {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--text);
+}
+
+textarea, input {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+}

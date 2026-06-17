@@ -78,6 +78,22 @@ def read_note(note_id: str) -> str:
     return _load(path).content
 
 
+def read_note_detail(note_id: str) -> dict:
+    """Full note including metadata. Raises FileNotFoundError if missing."""
+    path = _path_for(note_id)
+    if not path.exists():
+        raise FileNotFoundError(f"No note with id {note_id!r}")
+    post = _load(path)
+    return {
+        "id": post.get("id", note_id),
+        "title": post.get("title", note_id),
+        "created": post.get("created", ""),
+        "updated": post.get("updated", ""),
+        "tags": post.get("tags", []),
+        "body": post.content,
+    }
+
+
 def write_note(title: str, body: str, tags: list[str] | None = None) -> str:
     """Create a new note; return its id. id = <date>-<slug(title)>."""
     NOTES_DIR.mkdir(exist_ok=True)

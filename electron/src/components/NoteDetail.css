@@ -1,0 +1,83 @@
+.note-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.note-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--blur));
+  flex-shrink: 0;
+}
+
+.note-title-input {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  margin-right: 12px;
+}
+
+.note-title-input::placeholder {
+  color: var(--text-faint);
+}
+
+.note-id {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  flex: 1;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-status {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.save-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--border-hi);
+  transition: background 0.12s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: rgba(100, 210, 255, 0.22);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.note-body {
+  flex: 1;
+  padding: 24px 28px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+  overflow-y: auto;
+  width: 100%;
+  background: transparent;
+}
+
+.note-body::placeholder {
+  color: var(--text-faint);
+}
